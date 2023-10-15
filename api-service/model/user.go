@@ -13,7 +13,7 @@ import (
 type User struct {
 	Name       string `json:"name" bson:"name"`
 	Email      string `json:"email" bson:"email"`
-	NationalId string `json:"nationalId" bson:"nationalId"`
+	NationalId string `json:"nationalId" bson:"_id"`
 	IP         string `json:"ip" bson:"ip"`
 	Image1     string `json:"image1" bson:"image1"`
 	Image2     string `json:"image2" bson:"image2"`
@@ -40,7 +40,7 @@ func ConnectMongo() {
 
 func PingDB(client *mongo.Client) {
 	if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{"ping", 1}}).Err(); err != nil {
-		log.Warnln(err)
+		log.Warnln("error", err)
 	}
 	log.Infoln("database is fine!")
 }
@@ -51,11 +51,11 @@ func CloseConn(client *mongo.Client) {
 	}
 }
 
-func Insert(name, email, nationalId, ip, image1, image2 string) bool {
+func Insert(name, email, nationalId, ip, image1, image2 string) error {
 	err := Coll.FindOne(context.TODO(), bson.D{{"nationalId", nationalId}}).Err()
 	if err != mongo.ErrNoDocuments {
 		log.Infoln("user is already registered: ", nationalId)
-		return false
+		return err
 	}
 
 	nationalId = base64.StdEncoding.EncodeToString([]byte(nationalId))
@@ -76,7 +76,7 @@ func Insert(name, email, nationalId, ip, image1, image2 string) bool {
 
 	log.Infoln("user is created: ", nationalId, " name:", name)
 
-	return true
+	return nil
 }
 
 func Update(nationalId, state string) bool {

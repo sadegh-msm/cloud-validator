@@ -1,6 +1,9 @@
 package main
 
-import "hw1/api-service/api"
+import (
+	"hw1/api-service/api"
+	"hw1/api-service/model"
+)
 
 type Server struct {
 	Host string
@@ -14,6 +17,8 @@ func main() {
 	}
 	e := api.SetupRouter()
 
+	model.ConnectMongo()
+	defer model.CloseConn(model.DB)
+
 	e.Logger.Fatal(e.Start(s.Host + s.Port))
-	//api.ConnectS3()
 }

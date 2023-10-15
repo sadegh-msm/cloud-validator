@@ -4,6 +4,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
@@ -22,6 +23,7 @@ func ConnectS3() *session.Session {
 
 	if err != nil {
 		log.Warnln("can not connect to s3", err)
+		return nil
 	}
 	log.Infoln("connected to S3 instance")
 
@@ -31,7 +33,13 @@ func ConnectS3() *session.Session {
 func UploadS3(sess *session.Session, fileHeader *multipart.FileHeader, bucket string, ID string) string {
 	uploader := s3manager.NewUploader(sess)
 	file, err := fileHeader.Open()
-	key := fmt.Sprintf("%s", fileHeader.Filename+ID)
+	if err != nil {
+		log.Warnln("cant open file")
+		return ""
+	}
+
+	fullFileName := ID + fileHeader.Filename
+	key := fmt.Sprintf("%s", fullFileName)
 
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucket),
@@ -39,11 +47,33 @@ func UploadS3(sess *session.Session, fileHeader *multipart.FileHeader, bucket st
 		Body:   file,
 	})
 	if err != nil {
-		log.Warnln("Unable to upload %q to %q, %v", fileHeader.Filename, bucket, err)
+		log.Warnf("Unable to upload %q to %q, %v", fullFileName, bucket, err)
+		return ""
 	}
-	log.Infoln("Successfully uploaded %q to %q\n", fileHeader.Filename, bucket)
+	log.Infof("Successfully uploaded %q to %q\n", fullFileName, bucket)
 
 	return key
+}
+
+func listMyBuckets(sess *session.Session) {
+	svc := s3.New(sess, &aws.Config{
+		Region:   aws.String("default"),
+		Endpoint: aws.String("https://hw1-pic.s3.ir-thr-at1.arvanstorage.ir"),
+	})
+
+	result, err := svc.ListBuckets(nil)
+
+	if err != nil {
+		log.Warnf("Unable to list buckets, %v", err)
+	}
+
+	log.Infoln("My buckets now are:")
+
+	for _, b := range result.Buckets {
+		log.Infoln(aws.StringValue(b.Name) + "\n")
+	}
+
+	log.Infoln("\n")
 }
 
 func ConnectMQ() *amqp.Connection {

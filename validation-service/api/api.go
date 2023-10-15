@@ -30,7 +30,7 @@ func ConnectS3() *session.Session {
 func DownloadS3(sess *session.Session, bucket string, key string) *os.File {
 	file, err := os.Create(key)
 	if err != nil {
-		log.Warnln("Unable to open file %q, %v", key, err)
+		log.Warnf("Unable to open file %q, %v", key, err)
 	}
 
 	downloader := s3manager.NewDownloader(sess)
@@ -41,7 +41,7 @@ func DownloadS3(sess *session.Session, bucket string, key string) *os.File {
 			Key:    aws.String(key),
 		})
 	if err != nil {
-		log.Warnln("Unable to download item %q, %v", key, err)
+		log.Warnf("Unable to download item %q, %v", key, err)
 	}
 
 	log.Infoln("Downloaded", file.Name(), numBytes, "bytes")

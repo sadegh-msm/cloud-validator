@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-const bucket = "hw1-pic"
+const bucket = "hw1-pic.s3.ir"
 
 func SetupRouter() *echo.Echo {
 	e := echo.New()
@@ -24,6 +24,9 @@ func SetupRouter() *echo.Echo {
 
 func newUser(c echo.Context) error {
 	sess := ConnectS3()
+
+	listMyBuckets(sess)
+	model.PingDB(model.DB)
 
 	name := c.FormValue("name")
 	email := c.FormValue("email")
@@ -43,6 +46,13 @@ func newUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "Unable to open file")
 	}
 	path2 := UploadS3(sess, image2, bucket, nationalId)
+
+	err = model.Insert(name, email, nationalId, ip, path1, path2)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "Unable to create user")
+	}
+	log.Println("users:", model.GetAll())
+	model.CloseConn(model.DB)
 
 	user := model.User{
 		Name:       name,
