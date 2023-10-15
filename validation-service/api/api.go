@@ -56,18 +56,22 @@ func ConnectMQ() *amqp.Connection {
 	return connection
 }
 
-func ReadMQ(connection *amqp.Connection) {
+func ReadMQ(connection *amqp.Connection) (string, error) {
 	channel, _ := connection.Channel()
-	durable, exclusive := false, false
-	autoDelete, noWait := true, true
 
-	q, _ := channel.QueueDeclare("user_ids", durable, autoDelete, exclusive, noWait, nil)
-	channel.QueueBind(q.Name, "#", "amq.topic", false, nil)
-	autoAck, exclusive, noLocal, noWait := false, false, false, false
-	messages, _ := channel.Consume(q.Name, "", autoAck, exclusive, noLocal, noWait, nil)
-	multiAck := false
+	q, _ := channel.QueueDeclare("user_ids", false, true, false, true, nil)
+	err := channel.QueueBind(q.Name, "#", "amq.topic", false, nil)
+	if err != nil {
+		log.Warnln("cant bind to queue")
+		return "", err
+	}
+
+	messages, _ := channel.Consume(q.Name, "", false, false, false, true, nil)
 	for msg := range messages {
 		fmt.Println("Body:", string(msg.Body), "Timestamp:", msg.Timestamp)
-		msg.Ack(multiAck)
+		msg.Ack(false)
+
+		return string(msg.Body), nil
 	}
+	return "", nil
 }

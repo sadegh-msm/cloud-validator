@@ -14,7 +14,7 @@ type User struct {
 	Name       string `json:"name" bson:"name"`
 	Email      string `json:"email" bson:"email"`
 	NationalId string `json:"nationalId" bson:"nationalId"`
-	IP         string `json:"IP" bson:"IP"`
+	IP         string `json:"ip" bson:"ip"`
 	Image1     string `json:"image1" bson:"image1"`
 	Image2     string `json:"image2" bson:"image2"`
 	State      string `json:"state" bson:"state"`

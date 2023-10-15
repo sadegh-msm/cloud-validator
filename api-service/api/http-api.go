@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	log "github.com/sirupsen/logrus"
 
 	"hw1/api-service/model"
 	"net/http"
@@ -31,12 +32,14 @@ func newUser(c echo.Context) error {
 
 	image1, err := c.FormFile("image1")
 	if err != nil {
+		log.Warnln("image1 is broken")
 		return c.JSON(http.StatusBadRequest, "Unable to open file")
 	}
 	path1 := UploadS3(sess, image1, bucket, nationalId)
 
 	image2, err := c.FormFile("image2")
 	if err != nil {
+		log.Warnln("image2 is broken")
 		return c.JSON(http.StatusBadRequest, "Unable to open file")
 	}
 	path2 := UploadS3(sess, image2, bucket, nationalId)

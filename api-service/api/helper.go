@@ -53,7 +53,7 @@ func ConnectMQ() *amqp.Connection {
 	return connection
 }
 
-func WriteMQ(connection *amqp.Connection, message string) {
+func WriteMQ(connection *amqp.Connection, message string) error {
 	timer := time.NewTicker(1 * time.Second)
 	channel, _ := connection.Channel()
 
@@ -65,6 +65,11 @@ func WriteMQ(connection *amqp.Connection, message string) {
 			Body:         []byte(message),
 		}
 		mandatory, immediate := false, false
-		channel.Publish("amq.topic", "ping", mandatory, immediate, msg)
+		err := channel.Publish("amq.topic", "ping", mandatory, immediate, msg)
+		if err != nil {
+			log.Warnln("cant publish message to queue")
+			return err
+		}
 	}
+	return nil
 }
