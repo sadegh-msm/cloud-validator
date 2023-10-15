@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-var bucket string
+const bucket = "hw1-pic"
 
 func SetupRouter() *echo.Echo {
 	e := echo.New()

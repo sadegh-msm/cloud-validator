@@ -112,3 +112,14 @@ func GetAll() []User {
 
 	return res
 }
+
+func Find(nationalId string) *User {
+	var doc User
+
+	err := Coll.FindOne(context.TODO(), bson.D{{"nationalId", nationalId}}).Decode(&doc)
+	if err != nil {
+		log.Warnln("user not found")
+	}
+
+	return &doc
+}
