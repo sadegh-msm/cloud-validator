@@ -4,7 +4,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"encoding/base64"
 	"hw1/api-service/model"
 	"net/http"
 )
@@ -28,7 +27,6 @@ func newUser(c echo.Context) error {
 	name := c.FormValue("name")
 	email := c.FormValue("email")
 	nationalId := c.FormValue("nationalId")
-	userId := c.FormValue("userId")
 	ip := c.RealIP()
 
 	image1, err := c.FormFile("image1")
@@ -43,11 +41,9 @@ func newUser(c echo.Context) error {
 	}
 	path2 := UploadS3(sess, image2, bucket, nationalId)
 
-	nationalId = base64.StdEncoding.EncodeToString([]byte(nationalId))
 	user := model.User{
 		Name:       name,
 		Email:      email,
-		UserId:     userId,
 		NationalId: nationalId,
 		IP:         ip,
 		Image1:     path1,

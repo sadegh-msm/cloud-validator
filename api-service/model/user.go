@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/base64"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -10,17 +11,19 @@ import (
 )
 
 type User struct {
-	Name       string                `json:"name"`
-	Email      string                `json:"email"`
-	UserId     string                `json:"userId"`
-	NationalId string                `json:"nationalId"`
-	IP         string                `json:"IP"`
-	Image1     string `json:"image1"`
-	Image2     string `json:"image2"`
-	State      string                `json:"state"`
+	Name       string `json:"name" bson:"name"`
+	Email      string `json:"email" bson:"email"`
+	NationalId string `json:"nationalId" bson:"nationalId"`
+	IP         string `json:"IP" bson:"IP"`
+	Image1     string `json:"image1" bson:"image1"`
+	Image2     string `json:"image2" bson:"image2"`
+	State      string `json:"state" bson:"state"`
 }
 
-var DB *mongo.Client
+var (
+	DB   *mongo.Client
+	Coll *mongo.Collection
+)
 
 func ConnectMongo() {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
@@ -31,6 +34,8 @@ func ConnectMongo() {
 	if err != nil {
 		log.Warnln(err)
 	}
+
+	Coll = DB.Database("validator").Collection("users")
 }
 
 func PingDB(client *mongo.Client) {
@@ -46,6 +51,64 @@ func CloseConn(client *mongo.Client) {
 	}
 }
 
-func Insert() {
+func Insert(name, email, nationalId, ip, image1, image2 string) bool {
+	err := Coll.FindOne(context.TODO(), bson.D{{"nationalId", nationalId}}).Err()
+	if err != mongo.ErrNoDocuments {
+		log.Infoln("user is already registered: ", nationalId)
+		return false
+	}
 
+	nationalId = base64.StdEncoding.EncodeToString([]byte(nationalId))
+
+	doc := &User{
+		Name:       name,
+		Email:      email,
+		NationalId: nationalId,
+		IP:         ip,
+		Image1:     image1,
+		Image2:     image2,
+		State:      "pending",
+	}
+	_, err = Coll.InsertOne(context.TODO(), doc)
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	log.Infoln("user is created: ", nationalId, " name:", name)
+
+	return true
+}
+
+func Update(nationalId, state string) bool {
+	update := bson.D{
+		{"$set", bson.D{
+			{"state", state},
+		}},
+	}
+	_, err := Coll.UpdateOne(context.TODO(), bson.D{{"nationalId", nationalId}}, update)
+	if err != nil {
+		log.Warnln("cant update users object")
+		return false
+	}
+
+	return true
+}
+
+func GetAll() []User {
+	cur, err := Coll.Find(context.TODO(), bson.D{})
+	if err != nil {
+		log.Warnln("cant find all users")
+	}
+
+	res := make([]User, 0)
+	var doc User
+	for cur.Next(context.TODO()) {
+		err := cur.Decode(&doc)
+		if err != nil {
+			log.Panicln(err)
+		}
+		res = append(res, doc)
+	}
+
+	return res
 }

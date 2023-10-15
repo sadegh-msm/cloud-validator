@@ -5,12 +5,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
-	"time"
 
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"mime/multipart"
+	"time"
 )
 
 func ConnectS3() *session.Session {
@@ -53,7 +53,7 @@ func ConnectMQ() *amqp.Connection {
 	return connection
 }
 
-func WriteMQ(connection *amqp.Connection) {
+func WriteMQ(connection *amqp.Connection, message string) {
 	timer := time.NewTicker(1 * time.Second)
 	channel, _ := connection.Channel()
 
@@ -62,7 +62,7 @@ func WriteMQ(connection *amqp.Connection) {
 			DeliveryMode: 1,
 			Timestamp:    t,
 			ContentType:  "text/plain",
-			Body:         []byte("Hello world"),
+			Body:         []byte(message),
 		}
 		mandatory, immediate := false, false
 		channel.Publish("amq.topic", "ping", mandatory, immediate, msg)
