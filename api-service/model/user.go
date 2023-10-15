@@ -52,7 +52,7 @@ func CloseConn(client *mongo.Client) {
 }
 
 func Insert(name, email, nationalId, ip, image1, image2 string) error {
-	err := Coll.FindOne(context.TODO(), bson.D{{"nationalId", nationalId}}).Err()
+	err := Coll.FindOne(context.TODO(), bson.D{{"_id", nationalId}}).Err()
 	if err != mongo.ErrNoDocuments {
 		log.Infoln("user is already registered: ", nationalId)
 		return err
@@ -85,7 +85,7 @@ func Update(nationalId, state string) bool {
 			{"state", state},
 		}},
 	}
-	_, err := Coll.UpdateOne(context.TODO(), bson.D{{"nationalId", nationalId}}, update)
+	_, err := Coll.UpdateOne(context.TODO(), bson.D{{"_id", nationalId}}, update)
 	if err != nil {
 		log.Warnln("cant update users object")
 		return false
@@ -116,7 +116,7 @@ func GetAll() []User {
 func Find(nationalId string) *User {
 	var doc User
 
-	err := Coll.FindOne(context.TODO(), bson.D{{"nationalId", nationalId}}).Decode(&doc)
+	err := Coll.FindOne(context.TODO(), bson.D{{"_id", nationalId}}).Decode(&doc)
 	if err != nil {
 		log.Warnln("user not found")
 	}
