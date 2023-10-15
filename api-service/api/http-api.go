@@ -4,8 +4,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	log "github.com/sirupsen/logrus"
-
 	"hw1/api-service/model"
+
 	"net/http"
 )
 
@@ -23,10 +23,10 @@ func SetupRouter() *echo.Echo {
 }
 
 func newUser(c echo.Context) error {
-	sess := ConnectS3()
+	//sess := ConnectS3()
 
-	listMyBuckets(sess)
-	model.PingDB(model.DB)
+	//listMyBuckets(sess)
+	//model.PingDB(model.DB)
 
 	name := c.FormValue("name")
 	email := c.FormValue("email")
@@ -38,21 +38,20 @@ func newUser(c echo.Context) error {
 		log.Warnln("image1 is broken")
 		return c.JSON(http.StatusBadRequest, "Unable to open file")
 	}
-	path1 := UploadS3(sess, image1, bucket, nationalId)
+	path1 := UploadS3(model.Res.S3Sess, image1, bucket, nationalId)
 
 	image2, err := c.FormFile("image2")
 	if err != nil {
 		log.Warnln("image2 is broken")
 		return c.JSON(http.StatusBadRequest, "Unable to open file")
 	}
-	path2 := UploadS3(sess, image2, bucket, nationalId)
+	path2 := UploadS3(model.Res.S3Sess, image2, bucket, nationalId)
 
 	err = model.Insert(name, email, nationalId, ip, path1, path2)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, "Unable to create user")
+		return c.JSON(http.StatusBadRequest, "user already exist")
 	}
-	log.Println("users:", model.GetAll())
-	model.CloseConn(model.DB)
+	//log.Println("users:", model.GetAll())
 
 	user := model.User{
 		Name:       name,

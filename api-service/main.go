@@ -1,6 +1,7 @@
 package main
 
 import (
+	log "github.com/sirupsen/logrus"
 	"hw1/api-service/api"
 	"hw1/api-service/model"
 )
@@ -17,8 +18,16 @@ func main() {
 	}
 	e := api.SetupRouter()
 
-	model.ConnectMongo()
-	defer model.CloseConn(model.DB)
+	err := model.ConnectMongo()
+	err = api.ConnectS3()
+	err = api.ConnectMQ()
+	if err != nil {
+		log.Warnln(err)
+		panic(err)
+	}
+
+	defer model.CloseConn(model.Res.MongoDB)
+	defer api.CloseMQ(model.Res.RabbitConnection)
 
 	e.Logger.Fatal(e.Start(s.Host + s.Port))
 }

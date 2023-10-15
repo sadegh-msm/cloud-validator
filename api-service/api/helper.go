@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -8,26 +9,24 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
-
-	"fmt"
+	"hw1/api-service/model"
 	"mime/multipart"
 	"time"
 )
 
-func ConnectS3() *session.Session {
-	sess, err := session.NewSession(&aws.Config{
+func ConnectS3() (err error) {
+	model.Res.S3Sess, err = session.NewSession(&aws.Config{
 		Credentials: credentials.NewStaticCredentials("ee82ad29-9bec-40f7-a64c-d854390c51a2", "24e63f33c5255a3862f0e7f83d6d37d519e2c55489b855f5dbba7bc5b41a45c4", ""),
 		Region:      aws.String("default"),
 		Endpoint:    aws.String("https://hw1-pic.s3.ir-thr-at1.arvanstorage.ir"),
 	})
-
 	if err != nil {
 		log.Warnln("can not connect to s3", err)
-		return nil
+		return err
 	}
-	log.Infoln("connected to S3 instance")
 
-	return sess
+	log.Infoln("connected to S3 instance")
+	return nil
 }
 
 func UploadS3(sess *session.Session, fileHeader *multipart.FileHeader, bucket string, ID string) string {
@@ -72,15 +71,22 @@ func listMyBuckets(sess *session.Session) {
 	for _, b := range result.Buckets {
 		log.Infoln(aws.StringValue(b.Name) + "\n")
 	}
-
-	log.Infoln("\n")
 }
 
-func ConnectMQ() *amqp.Connection {
+func ConnectMQ() (err error) {
 	url := "amqps://xgyeesmr:T-UTG1qOjoipEH5wB5xFoLPInQ7MpjYJ@sparrow.rmq.cloudamqp.com/xgyeesmr"
-	connection, _ := amqp.Dial(url)
+	model.Res.RabbitConnection, err = amqp.Dial(url)
+	if err != nil {
+		return err
+	}
+	return err
+}
 
-	return connection
+func CloseMQ(connection *amqp.Connection) {
+	err := connection.Close()
+	if err != nil {
+		return 
+	}
 }
 
 func WriteMQ(connection *amqp.Connection, message string) error {
