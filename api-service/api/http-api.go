@@ -23,8 +23,6 @@ func SetupRouter() *echo.Echo {
 }
 
 func newUser(c echo.Context) error {
-	//sess := ConnectS3()
-
 	//listMyBuckets(sess)
 	//model.PingDB(model.DB)
 
@@ -72,6 +70,12 @@ func newUser(c echo.Context) error {
 }
 
 func getUserStatus(c echo.Context) error {
-	//conn := model.ConnectMongo
-	return nil
+	nationalId := c.QueryParam("id")
+
+	user := model.Find(nationalId)
+	if user.IP != c.RealIP() {
+		return c.String(http.StatusUnauthorized, "unauthorized")
+	}
+
+	return c.String(http.StatusOK, "You are in "+user.State+" state")
 }

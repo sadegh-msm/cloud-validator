@@ -126,6 +126,7 @@ func GetAll() []User {
 func Find(nationalId string) *User {
 	var doc User
 
+	nationalId = base64.StdEncoding.EncodeToString([]byte(nationalId))
 	err := Res.MongoColl.FindOne(context.TODO(), bson.D{{"_id", nationalId}}).Decode(&doc)
 	if err != nil {
 		log.Warnln("user not found")
