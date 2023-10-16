@@ -3,8 +3,8 @@ package model
 import (
 	"encoding/base64"
 	"github.com/aws/aws-sdk-go/aws/session"
+	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
-	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

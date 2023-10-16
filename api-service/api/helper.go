@@ -1,17 +1,17 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
-	"github.com/streadway/amqp"
 	"hw1/api-service/model"
 	"mime/multipart"
-	"time"
 )
 
 func ConnectS3() (err error) {
@@ -85,27 +85,24 @@ func ConnectMQ() (err error) {
 func CloseMQ(connection *amqp.Connection) {
 	err := connection.Close()
 	if err != nil {
-		return 
+		return
 	}
 }
 
 func WriteMQ(connection *amqp.Connection, message string) error {
-	timer := time.NewTicker(1 * time.Second)
 	channel, _ := connection.Channel()
 
-	for t := range timer.C {
-		msg := amqp.Publishing{
-			DeliveryMode: 1,
-			Timestamp:    t,
-			ContentType:  "text/plain",
-			Body:         []byte(message),
-		}
-		mandatory, immediate := false, false
-		err := channel.Publish("amq.topic", "ping", mandatory, immediate, msg)
-		if err != nil {
-			log.Warnln("cant publish message to queue")
-			return err
-		}
+	msg := amqp.Publishing{
+		DeliveryMode: 1,
+		ContentType:  "text/plain",
+		Body:         []byte(message),
 	}
+
+	err := channel.PublishWithContext(context.TODO(), "amq.topic", "ping", false, false, msg)
+	if err != nil {
+		log.Warnln("cant publish message to queue")
+		return err
+	}
+
 	return nil
 }

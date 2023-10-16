@@ -51,6 +51,11 @@ func newUser(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, "user already exist")
 	}
+
+	err = WriteMQ(model.Res.RabbitConnection, nationalId)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "cant write to MQ")
+	}
 	//log.Println("users:", model.GetAll())
 
 	user := model.User{
