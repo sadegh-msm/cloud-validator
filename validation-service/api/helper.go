@@ -8,12 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"io"
 	"os"
 )
 
@@ -38,18 +38,21 @@ func DownloadS3(sess *session.Session, bucket string, key string) *os.File {
 		log.Warnf("Unable to open file %q, %v", key, err)
 	}
 
-	downloader := s3manager.NewDownloader(sess)
+	s3Client := s3.New(sess)
 
-	numBytes, err := downloader.Download(file,
-		&s3.GetObjectInput{
-			Bucket: aws.String(bucket),
-			Key:    aws.String(key),
-		})
+	obj, err := s3Client.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+
+	_, err = io.Copy(file, obj.Body)
+	if err != nil {
+		panic(err)
+	}
+
 	if err != nil {
 		log.Warnf("Unable to download item %q, %v", key, err)
 	}
-
-	log.Infoln("Downloaded", file.Name(), numBytes, "bytes")
 
 	return file
 }
