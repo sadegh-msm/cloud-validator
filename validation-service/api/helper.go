@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/mailgun/mailgun-go"
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -123,4 +124,24 @@ func Find(nationalId string) *User {
 	}
 
 	return &doc
+}
+
+func SendMail(stage, receiver, domain, apiKey string) {
+	mg := mailgun.NewMailgun(domain, apiKey)
+	sender := "msmohamadi1380@gmail.com"
+	subject := "Validation result"
+	body := fmt.Sprintf("your request for validating your information is on stage %s", stage)
+
+	sendMessage(mg, sender, subject, body, receiver)
+}
+
+func sendMessage(mg mailgun.Mailgun, sender, subject, body, recipient string) {
+	message := mg.NewMessage(sender, subject, body, recipient)
+
+	resp, id, err := mg.Send(message)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("sned main, also ID: %s Resp: %s\n", id, resp)
 }
