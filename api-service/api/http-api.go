@@ -4,12 +4,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	log "github.com/sirupsen/logrus"
+	"hw1/api-service/configs"
 	"hw1/api-service/model"
 
 	"net/http"
 )
-
-const bucket = "hw1-pic.s3.ir"
 
 func SetupRouter() *echo.Echo {
 	e := echo.New()
@@ -23,9 +22,6 @@ func SetupRouter() *echo.Echo {
 }
 
 func newUser(c echo.Context) error {
-	//listMyBuckets(sess)
-	//model.PingDB(model.DB)
-
 	name := c.FormValue("name")
 	email := c.FormValue("email")
 	nationalId := c.FormValue("nationalId")
@@ -36,14 +32,14 @@ func newUser(c echo.Context) error {
 		log.Warnln("image1 is broken")
 		return c.JSON(http.StatusBadRequest, "Unable to open file")
 	}
-	path1 := UploadS3(model.Res.S3Sess, image1, bucket, nationalId)
+	path1 := UploadS3(model.Res.S3Sess, image1, configs.Conf.S3Bucket, nationalId)
 
 	image2, err := c.FormFile("image2")
 	if err != nil {
 		log.Warnln("image2 is broken")
 		return c.JSON(http.StatusBadRequest, "Unable to open file")
 	}
-	path2 := UploadS3(model.Res.S3Sess, image2, bucket, nationalId)
+	path2 := UploadS3(model.Res.S3Sess, image2, configs.Conf.S3Bucket, nationalId)
 
 	err = model.Insert(name, email, nationalId, ip, path1, path2)
 	if err != nil {

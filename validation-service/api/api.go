@@ -2,12 +2,7 @@ package api
 
 import (
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	bucket = "hw1-pic.s3.ir"
-	MGapiKey = "880e398409b13a654b0e5f564017f933-3750a53b-2bbe965e"
-	domain = "sandbox537fc23d9dfc4ff085da5c7b23074837.mailgun.org"
+	"hw1/validation-service/configs"
 )
 
 func Validate() bool {
@@ -18,8 +13,8 @@ func Validate() bool {
 	}
 
 	user := Find(userNationalId)
-	image1 := DownloadS3(Res.S3Sess, bucket, user.Image1)
-	image2 := DownloadS3(Res.S3Sess, bucket, user.Image2)
+	image1 := DownloadS3(Res.S3Sess, configs.Conf.S3Bucket, user.Image1)
+	image2 := DownloadS3(Res.S3Sess, configs.Conf.S3Bucket, user.Image2)
 
 	id1, err := faceDetection(image1)
 	id2, err := faceDetection(image2)
@@ -28,12 +23,14 @@ func Validate() bool {
 
 	if similarityScore >= 80 {
 		Update(userNationalId, "accepted")
-		SendMail(user.State, user.Email, domain, MGapiKey)
+		user := Find(userNationalId)
+		SendMail(user.State, user.Email, configs.Conf.MailGunDomain, configs.Conf.MailGunApiKey)
 		log.Infof("person with %s ID has been accepted and informed by email.", userNationalId)
 		return true
 	} else {
 		Update(userNationalId, "rejected")
-		SendMail(user.State, user.Email, domain, MGapiKey)
+		user := Find(userNationalId)
+		SendMail(user.State, user.Email, configs.Conf.MailGunDomain, configs.Conf.MailGunApiKey)
 		log.Infof("person with %s ID has been rejected and informed by email.", userNationalId)
 		return false
 	}

@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"hw1/validation-service/configs"
 
 	"bytes"
 	"context"
@@ -23,16 +24,11 @@ import (
 	"os"
 )
 
-var (
-	apiKey    = "acc_fccb030428279de"
-	secretKey = "b1a6e4450232c144c55495563d5599c0"
-)
-
 func ConnectS3() (err error) {
 	Res.S3Sess, err = session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials("ee82ad29-9bec-40f7-a64c-d854390c51a2", "24e63f33c5255a3862f0e7f83d6d37d519e2c55489b855f5dbba7bc5b41a45c4", ""),
-		Region:      aws.String("default"),
-		Endpoint:    aws.String("https://hw1-pic.s3.ir-thr-at1.arvanstorage.ir"),
+		Credentials: credentials.NewStaticCredentials(configs.Conf.S3AccessKey, configs.Conf.S3SecretKey, ""),
+		Region:      aws.String(configs.Conf.S3Region),
+		Endpoint:    aws.String(configs.Conf.S3Endpoint),
 	})
 	if err != nil {
 		log.Warnln("can not connect to s3", err)
@@ -56,7 +52,7 @@ func DownloadS3(sess *session.Session, bucket string, key string) *os.File {
 	s3Client := s3.New(sess)
 
 	obj, err := s3Client.GetObject(&s3.GetObjectInput{
-		Bucket: aws.String(bucket),
+		Bucket: aws.String(configs.Conf.S3Bucket),
 		Key:    aws.String(key),
 	})
 
@@ -73,8 +69,7 @@ func DownloadS3(sess *session.Session, bucket string, key string) *os.File {
 }
 
 func ConnectMQ() (err error) {
-	url := "amqps://xgyeesmr:T-UTG1qOjoipEH5wB5xFoLPInQ7MpjYJ@sparrow.rmq.cloudamqp.com/xgyeesmr"
-	Res.RabbitConnection, err = amqp.Dial(url)
+	Res.RabbitConnection, err = amqp.Dial(configs.Conf.AmqpAddress)
 	if err != nil {
 		return err
 	}
@@ -100,7 +95,7 @@ func CloseMQ(connection *amqp.Connection) {
 
 func ConnectMongo() (err error) {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI("mongodb+srv://msmohamadi1380:13sadegh81@hw1-cloud.9hbuqq3.mongodb.net/?retryWrites=true&w=majority").SetServerAPIOptions(serverAPI)
+	opts := options.Client().ApplyURI(configs.Conf.MongoAddress).SetServerAPIOptions(serverAPI)
 
 	Res.MongoDB, err = mongo.Connect(context.TODO(), opts)
 	if err != nil {
@@ -189,7 +184,7 @@ func faceDetection(file *os.File) (string, error) {
 		return "", err
 	}
 
-	request.SetBasicAuth(apiKey, secretKey)
+	request.SetBasicAuth(configs.Conf.ImaggaApiKey, configs.Conf.ImaggaSecretKey)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 
 	client := &http.Client{}
@@ -217,7 +212,7 @@ func FaceSimilarity(face1, face2 string) int {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest("GET", "https://api.imagga.com/v2/faces/similarity?face_id="+face1+"&second_face_id="+face2, nil)
-	req.SetBasicAuth(apiKey, secretKey)
+	req.SetBasicAuth(configs.Conf.ImaggaApiKey, configs.Conf.ImaggaSecretKey)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -239,6 +234,8 @@ func Update(nationalId, state string) bool {
 			{"state", state},
 		}},
 	}
+
+	nationalId = base64.StdEncoding.EncodeToString([]byte(nationalId))
 	_, err := Res.MongoColl.UpdateOne(context.TODO(), bson.D{{"_id", nationalId}}, update)
 	if err != nil {
 		log.Warnln("cant update users object")

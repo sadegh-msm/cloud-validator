@@ -3,9 +3,12 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 	"hw1/validation-service/api"
+	"hw1/validation-service/configs"
 )
 
 func main() {
+	configs.SetConf()
+
 	err := api.ConnectMongo()
 	err = api.ConnectS3()
 	err = api.ConnectMQ()

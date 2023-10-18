@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"hw1/api-service/configs"
 
 	"context"
 )
@@ -19,8 +20,6 @@ type Resources struct {
 	RabbitConnection *amqp.Connection
 }
 
-var Res Resources
-
 type User struct {
 	Name       string `json:"name" bson:"name"`
 	Email      string `json:"email" bson:"email"`
@@ -31,9 +30,12 @@ type User struct {
 	State      string `json:"state" bson:"state"`
 }
 
+var Res Resources
+
+
 func ConnectMongo() (err error) {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI("mongodb+srv://msmohamadi1380:13sadegh81@hw1-cloud.9hbuqq3.mongodb.net/?retryWrites=true&w=majority").SetServerAPIOptions(serverAPI)
+	opts := options.Client().ApplyURI(configs.Conf.MongoAddress).SetServerAPIOptions(serverAPI)
 
 	Res.MongoDB, err = mongo.Connect(context.TODO(), opts)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"hw1/api-service/api"
+	"hw1/api-service/configs"
 	"hw1/api-service/model"
 )
 
@@ -13,6 +14,8 @@ type Server struct {
 }
 
 func main() {
+	configs.SetConf()
+
 	s := Server{
 		"localhost",
 		":8080",

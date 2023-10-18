@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
+	"hw1/api-service/configs"
 
 	"context"
 	"fmt"
@@ -17,9 +18,9 @@ import (
 
 func ConnectS3() (err error) {
 	model.Res.S3Sess, err = session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials("ee82ad29-9bec-40f7-a64c-d854390c51a2", "24e63f33c5255a3862f0e7f83d6d37d519e2c55489b855f5dbba7bc5b41a45c4", ""),
-		Region:      aws.String("default"),
-		Endpoint:    aws.String("https://hw1-pic.s3.ir-thr-at1.arvanstorage.ir"),
+		Credentials: credentials.NewStaticCredentials(configs.Conf.S3AccessKey, configs.Conf.S3SecretKey, ""),
+		Region:      aws.String(configs.Conf.S3Region),
+		Endpoint:    aws.String(configs.Conf.S3Endpoint),
 	})
 	if err != nil {
 		log.Warnln("can not connect to s3", err)
@@ -42,7 +43,7 @@ func UploadS3(sess *session.Session, fileHeader *multipart.FileHeader, bucket st
 	key := fmt.Sprintf("%s", fullFileName)
 
 	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(bucket),
+		Bucket: aws.String(configs.Conf.S3Bucket),
 		Key:    aws.String(key),
 		Body:   file,
 	})
@@ -57,8 +58,8 @@ func UploadS3(sess *session.Session, fileHeader *multipart.FileHeader, bucket st
 
 func listMyBuckets(sess *session.Session) {
 	svc := s3.New(sess, &aws.Config{
-		Region:   aws.String("default"),
-		Endpoint: aws.String("https://hw1-pic.s3.ir-thr-at1.arvanstorage.ir"),
+		Region:   aws.String(configs.Conf.S3Region),
+		Endpoint: aws.String(configs.Conf.S3Endpoint),
 	})
 
 	result, err := svc.ListBuckets(nil)
@@ -75,8 +76,7 @@ func listMyBuckets(sess *session.Session) {
 }
 
 func ConnectMQ() (err error) {
-	url := "amqps://xgyeesmr:T-UTG1qOjoipEH5wB5xFoLPInQ7MpjYJ@sparrow.rmq.cloudamqp.com/xgyeesmr"
-	model.Res.RabbitConnection, err = amqp.Dial(url)
+	model.Res.RabbitConnection, err = amqp.Dial(configs.Conf.AmqpAddress)
 	if err != nil {
 		return err
 	}
