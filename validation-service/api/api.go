@@ -4,7 +4,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const bucket = "hw1-pic.s3.ir"
+const (
+	bucket = "hw1-pic.s3.ir"
+	MGapiKey = "880e398409b13a654b0e5f564017f933-3750a53b-2bbe965e"
+	domain = "sandbox537fc23d9dfc4ff085da5c7b23074837.mailgun.org"
+)
 
 func Validate() bool {
 	userNationalId, err := ReadMQ()
@@ -23,14 +27,14 @@ func Validate() bool {
 	similarityScore := FaceSimilarity(id1, id2)
 
 	if similarityScore >= 80 {
-
+		Update(userNationalId, "accepted")
+		SendMail(user.State, user.Email, domain, MGapiKey)
+		log.Infof("person with %s ID has been accepted and informed by email.", userNationalId)
+		return true
 	} else {
-
+		Update(userNationalId, "rejected")
+		SendMail(user.State, user.Email, domain, MGapiKey)
+		log.Infof("person with %s ID has been rejected and informed by email.", userNationalId)
+		return false
 	}
-	//MGapiKey := "880e398409b13a654b0e5f564017f933-3750a53b-2bbe965e"
-	//domain := "sandbox537fc23d9dfc4ff085da5c7b23074837.mailgun.org"
-
-	//SendMail(user.State, user.Email, domain, MGapiKey)
-
-	return true
 }
