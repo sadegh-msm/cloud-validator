@@ -17,8 +17,12 @@ func Validate() bool {
 	image1 := DownloadS3(Res.S3Sess, bucket, user.Image1)
 	image2 := DownloadS3(Res.S3Sess, bucket, user.Image2)
 
-	faceDetection(image1)
-	faceDetection(image2)
+	id1, err := faceDetection(image1)
+	id2, err := faceDetection(image2)
+
+	similarityScore := FaceSimilarity(id1, id2)
+
+	log.Warnln(similarityScore)
 
 	//MGapiKey := "880e398409b13a654b0e5f564017f933-3750a53b-2bbe965e"
 	//domain := "sandbox537fc23d9dfc4ff085da5c7b23074837.mailgun.org"

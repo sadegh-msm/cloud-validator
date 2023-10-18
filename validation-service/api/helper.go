@@ -16,10 +16,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
-	"os/exec"
 )
 
 var (
@@ -50,6 +50,8 @@ func DownloadS3(sess *session.Session, bucket string, key string) *os.File {
 		log.Warnf("Unable to open file %q, %v", key, err)
 	}
 
+	defer file.Close()
+
 	s3Client := s3.New(sess)
 
 	obj, err := s3Client.GetObject(&s3.GetObjectInput{
@@ -59,7 +61,7 @@ func DownloadS3(sess *session.Session, bucket string, key string) *os.File {
 
 	_, err = io.Copy(file, obj.Body)
 	if err != nil {
-		panic(err)
+		log.Warnln("cant copy file")
 	}
 
 	if err != nil {
@@ -157,33 +159,33 @@ func sendMessage(mg mailgun.Mailgun, sender, subject, body, recipient string) {
 	log.Infof("send main, also ID: %s Resp: %s\n", id, resp)
 }
 
-func faceDetection(file *os.File) {
+func faceDetection(file *os.File) (string, error) {
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
 
 	file, err := os.Open(file.Name())
 	if err != nil {
-		return
+		return "", err
 	}
 
 	part, err := writer.CreateFormFile("image", file.Name())
 	if err != nil {
 		log.Warnln("Error creating form file:", err)
-		return
+		return "", err
 	}
 
 	_, err = io.Copy(part, file)
 	if err != nil {
 		log.Warnln("Error copying image to request:", err)
-		return
+		return "", err
 	}
 	writer.Close()
 
-	url := "https://api.imagga.com/v2/faces/detections/"
+	url := "https://api.imagga.com/v2/faces/detections?return_face_id=1"
 	request, err := http.NewRequest("POST", url, bytes.NewReader(requestBody.Bytes()))
 	if err != nil {
 		log.Warnln("Error creating request:", err)
-		return
+		return "", err
 	}
 
 	request.SetBasicAuth(apiKey, secretKey)
@@ -193,7 +195,7 @@ func faceDetection(file *os.File) {
 	response, err := client.Do(request)
 	if err != nil {
 		log.Warnln("Error making request:", err)
-		return
+		return "", err
 	}
 	defer response.Body.Close()
 
@@ -201,16 +203,31 @@ func faceDetection(file *os.File) {
 	_, err = io.Copy(buf, response.Body)
 	if err != nil {
 		log.Warnln("Error reading response:", err)
-		return
+		return "", err
 	}
 
 	log.Infoln("Response:", buf.String())
+
+	id := ParseFaceIdJSON(buf.String())
+	return id, nil
 }
 
-func FaceSimilarity() {
-	output, err := exec.Command("ls").Output()
+func FaceSimilarity(face1, face2 string) int {
+	client := &http.Client{}
+
+	req, _ := http.NewRequest("GET", "https://api.imagga.com/v2/faces/similarity?face_id="+face1+"&second_face_id="+face2, nil)
+	req.SetBasicAuth(apiKey, secretKey)
+
+	resp, err := client.Do(req)
 	if err != nil {
-		return
+		fmt.Println("Error when sending request to the server")
+		return 0
 	}
-	log.Infoln(output)
+
+	defer resp.Body.Close()
+	respBody, _ := ioutil.ReadAll(resp.Body)
+
+	res := ParseScoreJSON(string(respBody))
+
+	return res
 }
