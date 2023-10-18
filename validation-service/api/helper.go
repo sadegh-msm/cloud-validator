@@ -19,6 +19,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
 )
 
 var (
@@ -155,20 +157,16 @@ func sendMessage(mg mailgun.Mailgun, sender, subject, body, recipient string) {
 }
 
 func faceDetection(file *os.File) {
-	var requestBody bytes.Buffer
-	writer := multipart.NewWriter(&requestBody)
-
+	var requestBody *bytes.Buffer
+	writer := multipart.NewWriter(requestBody)
 	// Add the image file to the request
-	part, err := writer.CreateFormFile("image", file.Name())
-	log.Infoln(file.Name())
+	part, err := writer.CreateFormFile("image", filepath.Base(file.Name()))
 	if err != nil {
 		fmt.Println("Error creating form file:", err)
 		return
 	}
 
 	log.Infoln("body", requestBody.String())
-
-	log.Warnln(part)
 
 	_, err = io.Copy(part, file)
 	if err != nil {
@@ -181,7 +179,7 @@ func faceDetection(file *os.File) {
 
 	// Create the HTTP request
 	url := "https://api.imagga.com/v2/faces/detections"
-	request, err := http.NewRequest("POST", url, &requestBody)
+	request, err := http.NewRequest("POST", url, bytes.NewReader(requestBody.Bytes()))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return
@@ -191,6 +189,7 @@ func faceDetection(file *os.File) {
 	request.SetBasicAuth(apiKey, secretKey)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 
+	log.Infoln("body end", request.Body)
 	// Make the POST request
 	client := &http.Client{}
 	response, err := client.Do(request)
@@ -213,5 +212,9 @@ func faceDetection(file *os.File) {
 }
 
 func FaceSimilarity() {
-
+	output, err := exec.Command("ls").Output()
+	if err != nil {
+		return
+	}
+	log.Infoln(output)
 }

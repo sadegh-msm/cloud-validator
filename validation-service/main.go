@@ -18,6 +18,8 @@ func main() {
 	defer api.CloseConn(api.Res.MongoDB)
 	defer api.CloseMQ(api.Res.RabbitConnection)
 
+	//api.FaceSimilarity()
+
 	for {
 		api.Validate()
 	}
