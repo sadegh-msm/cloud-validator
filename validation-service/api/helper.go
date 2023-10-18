@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -15,7 +16,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"io"
+	"mime/multipart"
+	"net/http"
 	"os"
+)
+
+var (
+	apiKey    = "acc_fccb030428279de"
+	secretKey = "b1a6e4450232c144c55495563d5599c0"
 )
 
 func ConnectS3() (err error) {
@@ -130,7 +138,7 @@ func SendMail(stage, receiver, domain, apiKey string) {
 	mg := mailgun.NewMailgun(domain, apiKey)
 	sender := "msmohamadi1380@gmail.com"
 	subject := "Validation result"
-	body := fmt.Sprintf("your request for validating your information is on stage %s", stage)
+	body := fmt.Sprintf("Your request for validating your information is on stage %s. Contact the admins if ypu have troubles for siginig in.", stage)
 
 	sendMessage(mg, sender, subject, body, receiver)
 }
@@ -143,5 +151,67 @@ func sendMessage(mg mailgun.Mailgun, sender, subject, body, recipient string) {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("sned main, also ID: %s Resp: %s\n", id, resp)
+	log.Infof("send main, also ID: %s Resp: %s\n", id, resp)
+}
+
+func faceDetection(file *os.File) {
+	var requestBody bytes.Buffer
+	writer := multipart.NewWriter(&requestBody)
+
+	// Add the image file to the request
+	part, err := writer.CreateFormFile("image", file.Name())
+	log.Infoln(file.Name())
+	if err != nil {
+		fmt.Println("Error creating form file:", err)
+		return
+	}
+
+	log.Infoln("body", requestBody.String())
+
+	log.Warnln(part)
+
+	_, err = io.Copy(part, file)
+	if err != nil {
+		fmt.Println("Error copying image to request:", err)
+		return
+	}
+
+	// Close the writer to finalize the request body
+	writer.Close()
+
+	// Create the HTTP request
+	url := "https://api.imagga.com/v2/faces/detections"
+	request, err := http.NewRequest("POST", url, &requestBody)
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return
+	}
+
+	// Set the necessary headers for authentication and content type
+	request.SetBasicAuth(apiKey, secretKey)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+
+	// Make the POST request
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		fmt.Println("Error making request:", err)
+		return
+	}
+	defer response.Body.Close()
+
+	log.Infoln(response.Status)
+	// Read and print the response
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, response.Body)
+	if err != nil {
+		fmt.Println("Error reading response:", err)
+		return
+	}
+
+	log.Infoln("Response:", buf.String())
+}
+
+func FaceSimilarity() {
+
 }
