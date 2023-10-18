@@ -161,6 +161,11 @@ func faceDetection(file *os.File) {
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
 
+	file, err := os.Open(file.Name())
+	if err != nil {
+		return
+	}
+
 	part, err := writer.CreateFormFile("image", file.Name())
 	if err != nil {
 		log.Warnln("Error creating form file:", err)
@@ -174,7 +179,7 @@ func faceDetection(file *os.File) {
 	}
 	writer.Close()
 
-	url := "https://api.imagga.com/v2/faces/detections"
+	url := "https://api.imagga.com/v2/faces/detections/"
 	request, err := http.NewRequest("POST", url, bytes.NewReader(requestBody.Bytes()))
 	if err != nil {
 		log.Warnln("Error creating request:", err)
