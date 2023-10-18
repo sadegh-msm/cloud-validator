@@ -1,12 +1,13 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws/session"
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"encoding/json"
+	"fmt"
 )
 
 type Resources struct {

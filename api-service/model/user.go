@@ -89,21 +89,6 @@ func Insert(name, email, nationalId, ip, image1, image2 string) error {
 	return nil
 }
 
-func Update(nationalId, state string) bool {
-	update := bson.D{
-		{"$set", bson.D{
-			{"state", state},
-		}},
-	}
-	_, err := Res.MongoColl.UpdateOne(context.TODO(), bson.D{{"_id", nationalId}}, update)
-	if err != nil {
-		log.Warnln("cant update users object")
-		return false
-	}
-
-	return true
-}
-
 func GetAll() []User {
 	cur, err := Res.MongoColl.Find(context.TODO(), bson.D{})
 	if err != nil {

@@ -1,8 +1,6 @@
 package api
 
 import (
-	"context"
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -10,6 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
+
+	"context"
+	"fmt"
 	"hw1/api-service/model"
 	"mime/multipart"
 )

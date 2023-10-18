@@ -1,10 +1,6 @@
 package api
 
 import (
-	"bytes"
-	"context"
-	"encoding/base64"
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -15,6 +11,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"bytes"
+	"context"
+	"encoding/base64"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -228,6 +229,40 @@ func FaceSimilarity(face1, face2 string) int {
 	respBody, _ := ioutil.ReadAll(resp.Body)
 
 	res := ParseScoreJSON(string(respBody))
+
+	return res
+}
+
+func Update(nationalId, state string) bool {
+	update := bson.D{
+		{"$set", bson.D{
+			{"state", state},
+		}},
+	}
+	_, err := Res.MongoColl.UpdateOne(context.TODO(), bson.D{{"_id", nationalId}}, update)
+	if err != nil {
+		log.Warnln("cant update users object")
+		return false
+	}
+
+	return true
+}
+
+func GetAll() []User {
+	cur, err := Res.MongoColl.Find(context.TODO(), bson.D{})
+	if err != nil {
+		log.Warnln("cant find all users")
+	}
+
+	res := make([]User, 0)
+	var doc User
+	for cur.Next(context.TODO()) {
+		err := cur.Decode(&doc)
+		if err != nil {
+			log.Panicln(err)
+		}
+		res = append(res, doc)
+	}
 
 	return res
 }

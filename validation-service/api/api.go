@@ -22,8 +22,11 @@ func Validate() bool {
 
 	similarityScore := FaceSimilarity(id1, id2)
 
-	log.Warnln(similarityScore)
+	if similarityScore >= 80 {
 
+	} else {
+
+	}
 	//MGapiKey := "880e398409b13a654b0e5f564017f933-3750a53b-2bbe965e"
 	//domain := "sandbox537fc23d9dfc4ff085da5c7b23074837.mailgun.org"
 
