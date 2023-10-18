@@ -161,48 +161,41 @@ func faceDetection(file *os.File) {
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
 
-	// Add the image file to the request
 	part, err := writer.CreateFormFile("image", file.Name())
 	if err != nil {
-		fmt.Println("Error creating form file:", err)
+		log.Warnln("Error creating form file:", err)
 		return
 	}
 
 	_, err = io.Copy(part, file)
 	if err != nil {
-		fmt.Println("Error copying image to request:", err)
+		log.Warnln("Error copying image to request:", err)
 		return
 	}
-
-	// Close the writer to finalize the request body
 	writer.Close()
 
-	// Create the HTTP request
 	url := "https://api.imagga.com/v2/faces/detections"
 	request, err := http.NewRequest("POST", url, bytes.NewReader(requestBody.Bytes()))
 	if err != nil {
-		fmt.Println("Error creating request:", err)
+		log.Warnln("Error creating request:", err)
 		return
 	}
 
-	// Set the necessary headers for authentication and content type
 	request.SetBasicAuth(apiKey, secretKey)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 
-	// Make the POST request
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		fmt.Println("Error making request:", err)
+		log.Warnln("Error making request:", err)
 		return
 	}
 	defer response.Body.Close()
 
-	// Read and print the response
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, response.Body)
 	if err != nil {
-		fmt.Println("Error reading response:", err)
+		log.Warnln("Error reading response:", err)
 		return
 	}
 
