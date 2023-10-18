@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 )
 
 var (
@@ -44,7 +43,9 @@ func ConnectS3() (err error) {
 }
 
 func DownloadS3(sess *session.Session, bucket string, key string) *os.File {
-	file, err := os.Create(key)
+	getwd, _ := os.Getwd()
+
+	file, err := os.Create(getwd + "/validation-service/images/" + key)
 	if err != nil {
 		log.Warnf("Unable to open file %q, %v", key, err)
 	}
@@ -157,16 +158,15 @@ func sendMessage(mg mailgun.Mailgun, sender, subject, body, recipient string) {
 }
 
 func faceDetection(file *os.File) {
-	var requestBody *bytes.Buffer
-	writer := multipart.NewWriter(requestBody)
+	var requestBody bytes.Buffer
+	writer := multipart.NewWriter(&requestBody)
+
 	// Add the image file to the request
-	part, err := writer.CreateFormFile("image", filepath.Base(file.Name()))
+	part, err := writer.CreateFormFile("image", file.Name())
 	if err != nil {
 		fmt.Println("Error creating form file:", err)
 		return
 	}
-
-	log.Infoln("body", requestBody.String())
 
 	_, err = io.Copy(part, file)
 	if err != nil {
@@ -189,7 +189,6 @@ func faceDetection(file *os.File) {
 	request.SetBasicAuth(apiKey, secretKey)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 
-	log.Infoln("body end", request.Body)
 	// Make the POST request
 	client := &http.Client{}
 	response, err := client.Do(request)
@@ -199,7 +198,6 @@ func faceDetection(file *os.File) {
 	}
 	defer response.Body.Close()
 
-	log.Infoln(response.Status)
 	// Read and print the response
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, response.Body)
