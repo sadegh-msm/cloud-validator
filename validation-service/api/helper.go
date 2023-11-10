@@ -164,6 +164,8 @@ func faceDetection(file *os.File) (string, error) {
 		return "", err
 	}
 
+	defer file.Close()
+
 	part, err := writer.CreateFormFile("image", file.Name())
 	if err != nil {
 		log.Warnln("Error creating form file:", err)

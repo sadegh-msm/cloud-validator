@@ -83,13 +83,6 @@ func ConnectMQ() (err error) {
 	return err
 }
 
-func CloseMQ(connection *amqp.Connection) {
-	err := connection.Close()
-	if err != nil {
-		return
-	}
-}
-
 func WriteMQ(connection *amqp.Connection, message string) error {
 	channel, _ := connection.Channel()
 
@@ -106,4 +99,11 @@ func WriteMQ(connection *amqp.Connection, message string) error {
 	}
 
 	return nil
+}
+
+func CloseMQ(connection *amqp.Connection) {
+	err := connection.Close()
+	if err != nil {
+		return
+	}
 }
